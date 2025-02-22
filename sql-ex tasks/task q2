@@ -1,0 +1,872 @@
+21
+select prod.maker, max(pc.price)
+from Product as prod
+inner join PC as pc
+on prod.model = pc.model
+group by prod.maker
+
+22
+select speed, avg(price)
+from PC
+group by speed
+having speed > 600
+
+23
+select prod.maker
+from Product as prod
+join PC as pc
+on prod.model = pc.model
+where pc.speed >= 750
+intersect
+select prod.maker
+from Product as prod
+left join Laptop as lp
+on prod.model = lp.model
+where lp.speed >= 750
+
+24
+with res(model, price) as (
+select model, price
+from PC
+where price = (
+	select max(price)
+	from PC)
+union
+select model, price
+from Laptop
+where price = (
+	select max(price)
+	from Laptop)
+union
+select model, price
+from Printer
+where price = (
+	select max(price)
+	from Printer))
+
+select model
+from res
+where price = (
+select max(price)
+from res)
+
+25
+with min_ram as (
+select model, ram, speed
+from PC
+where ram = (
+	select min(ram)
+	from PC)
+),
+max_speed as (
+select model
+from min_ram
+where speed = (
+	select max(speed)
+	from min_ram)
+),
+pc_makers as (
+	select distinct prod.maker
+	from product as prod
+	inner join max_speed
+	on prod.model = max_speed.model
+)
+
+select distinct prod.maker
+from product as prod
+inner join pc_makers as pm
+on prod.maker = pm.maker
+where prod.type = 'printer'
+
+26
+select avg(price)
+from (
+	select pc.price
+	from Product as prod
+	inner join PC as pc
+	on prod.model = pc.model
+	where prod.maker = 'A'
+	union all
+	select lp.price
+	from Product as prod
+	inner join Laptop as lp
+	on prod.model = lp.model
+	where prod.maker = 'A'
+) as res
+
+27
+with maker_hd(maker, hd) as (
+	select prod.maker, pc.hd
+	from Product as prod
+	inner join PC as pc
+	on prod.model = pc.model
+)
+
+select maker_hd.maker, avg(hd)
+from Product as prod
+inner join maker_hd
+on prod.maker = maker_hd.maker
+where type = 'Printer'
+group by maker_hd.maker
+
+28
+with m_m(maker, count_model) as (
+	select maker, count(model)
+	from Product
+	group by maker
+)
+
+select count(maker)
+from m_m
+where count_model = 1
+
+29
+select i.point, i.date, i.inc, o.out
+from Income_o as i
+inner join Outcome_o as o
+on i.point = o.point and i.date = o.date
+
+union
+
+select i.point, i.date, i.inc, null
+from Income_o as i
+left join Outcome_o as o
+on i.point = o.point and i.date = o.date
+where o.point is null
+
+union
+
+select o.point, o.date, null, o.out
+from Income_o as i
+right join Outcome_o as o
+on i.point = o.point and i.date = o.date
+where i.point is null
+
+30
+with
+res_inc as(
+	select point, date, sum(inc) as total_inc
+	from Income
+	group by point, date
+	),
+res_out as (
+	select point, date, sum(out) as total_out
+	from Outcome
+	group by point, date
+)
+
+select i.point, i.date, o.total_out, i.total_inc
+from res_inc as i
+inner join res_out as o
+on i.point = o.point and i.date = o.date
+union
+select i.point, i.date, null, i.total_inc
+from res_inc as i
+left join res_out as o
+on i.point = o.point and i.date = o.date
+where o.point is null
+union
+select o.point, o.date, o.total_out, null
+from res_inc as i
+right join res_out as o
+on i.point = o.point and i.date = o.date
+where i.point is null
+
+31
+select class, country
+from classes
+where bore >= 16
+
+32(3)
+
+33
+select ship
+from outcomes
+where battle = 'North Atlantic' and result = 'sunk'
+
+34
+with type_disp as (
+	select distinct class
+	from classes
+	where type = 'bb' and displacement > 35000
+),
+year as (
+	select name, class
+	from ships
+	where launched > 1921
+)
+
+select distinct y.name
+from type_disp as td
+inner join year as y
+on td.class = y.class
+
+35
+select model, type
+from Product
+where lower(model) not like '%[^a-zA-Z]%' or model not like '%[^0-9]%'
+
+36
+with all_ships as (
+	select ship as res_names
+	from Outcomes
+	union
+	select name  as res_names
+	from ships
+),
+all_classes as (
+	select class as res_classes
+	from classes
+	union
+	select class as res_classes
+	from ships
+)
+
+select s.res_names
+from all_ships as s
+inner join all_classes as c
+on s.res_names = c.res_classes
+
+37
+with out_in_cl as (
+	select o.ship
+	from outcomes as o
+	inner join classes as c
+	on o.ship = c.class
+),
+cl_sh as (
+	select class, name
+	from ships
+	union
+	select ship, ship
+	from out_in_cl
+	)
+
+select class
+from cl_sh
+group by class
+having count(class) = 1
+
+38
+select country
+from classes
+where type = 'bb'
+intersect
+select country
+from classes
+where type = 'bc'
+
+39
+with full_table as (
+	select o.ship, o.result, b.date
+	from outcomes as o
+	inner join battles as b
+	on b.name = o.battle
+),
+damaged as (
+	select ship, date
+	from full_table
+	where result = 'damaged'
+)
+
+select distinct ft.ship
+from full_table as ft
+inner join damaged as d
+on ft.ship = d.ship
+where ft.date > d.date
+
+
+40 
+with res(maker) as (
+select maker
+from Product
+group by maker
+having count(distinct type) = 1 and count(distinct model) > 1
+)
+
+select distinct prod.maker, prod.type
+from Product as prod
+inner join res
+on prod.maker = res.maker
+
+41
+with model_price as (
+	select model, price 
+	from PC
+	union
+	select model, price 
+	from Laptop
+	union
+	select model, price 
+	from Printer
+),
+maker_model_price as (
+	select prod.maker, mp.price
+	from Product as prod
+	inner join model_price as mp
+	on prod.model = mp.model
+	)
+
+select maker,
+	case
+		when count(price) < count(*)
+		then null
+		else max(price)
+		end as res_price
+from maker_model_price
+group by maker
+
+42
+select ship, battle
+from outcomes
+where result = 'sunk'
+
+43
+select name
+from battles
+where year(date) in (
+select year(date)
+from battles
+except 
+select launched
+from ships
+)
+
+44
+with all_ships as (
+	select ship as res_names
+	from Outcomes
+	union
+	select name as res_names
+	from ships
+)
+
+select res_names
+from all_ships
+where res_names like 'R%'
+
+45
+with all_ships as (
+	select ship as res_names
+	from Outcomes
+	union
+	select name as res_names
+	from ships
+)
+
+select res_names
+from all_ships
+where res_names like '% % %'
+
+46
+with in_battle as (
+	select ship
+	from outcomes
+	where battle = 'Guadalcanal'
+),
+res_ships as (
+	select i.ship, s.class
+	from in_battle as i
+	left join ships as s
+	on i.ship = s.name
+),
+upd_res as (
+	select ship,
+	case
+		when class is null
+		then ship
+		else class
+		end as class
+	from res_ships)
+
+select i.ship, c.displacement, c.numGuns
+from upd_res as i
+left join classes as c
+on i.class = c.class
+
+47(3)
+
+48
+with in_battle as (
+	select ship
+	from outcomes
+	where result = 'sunk'
+),
+in_ships as (
+	select class
+	from ships
+	where name in (select ship from in_battle)
+),
+in_classes as (
+	select class
+	from classes
+	where class in (select ship from in_battle)
+)
+
+select class
+from in_ships
+union
+select class
+from in_classes
+
+49
+with class_bore as (
+select class
+from classes
+where bore = 16
+),
+from_ships as (
+	select name
+	from ships
+	where class in (select * from class_bore)
+),
+from_outcomes as (
+	select ship
+	from outcomes
+	where ship in (select * from class_bore)
+)
+
+select * from from_ships
+union
+select * from from_outcomes
+
+50
+with from_ships as (
+	select name
+	from ships
+	where class = 'Kongo'
+),
+from_outcomes as (
+	select ship
+	from outcomes
+	where ship = 'Kongo'
+)
+
+select distinct battle
+from outcomes
+where ship in (
+	select * from from_ships
+	union
+	select * from from_outcomes
+)
+
+51(3)
+
+52
+with class_filter as (
+	select class
+	from classes
+	where country = 'Japan'
+	and type = 'bb'
+	and (numguns >= 9 or numguns is null)
+	and (bore < 19 or bore is null)
+	and (displacement <= 65000 or displacement is null)
+),
+ship_names as (
+	select name
+	from ships
+	where class in (select * from class_filter)
+)
+
+select name as res
+from ship_names
+
+53
+with bb as (
+	select numguns
+	from classes
+	where type = 'bb')
+
+select convert(numeric(6,2),avg(numguns*1.0))
+from bb
+
+54
+with from_classes as (
+	select class, numguns
+	from classes
+	where type = 'bb'
+	),
+from_ships as (
+	select class, name as ships
+	from ships
+	where class in (select class from from_classes)
+	),
+from_outcomes as (
+	select ship as class, ship as ships
+	from outcomes
+	where ship in (select class from from_classes)
+	),
+union_ships as (
+	select class, ships
+	from from_ships
+	union
+	select class, ships
+	from from_outcomes
+	),
+class_ships as (
+	select class, count(ships) as ships_num
+	from union_ships
+	group by class),
+all_guns as (
+	select cs.ships_num * numguns as bb_guns
+	from class_ships as cs
+	inner join classes as c
+	on cs.class = c.class
+)
+
+select convert(numeric(6,2),
+	(select sum(bb_guns) from all_guns)*1.0 / (select sum(ships_num) from class_ships)*1.0)
+
+55
+with class_year as (
+	select c.class, s.launched
+	from classes as c
+	left join ships as s
+	on c.class = s.class
+)
+
+select class, min(launched)
+from class_year
+group by class
+
+56
+with sunk_ships as (
+	select o.ship as ship,
+	case
+		when s.name is not null
+		then s.class
+		else o.ship
+		end as class
+	from outcomes as o
+	left join ships as s
+	on o.ship = s.name
+	where o.result = 'sunk'
+),
+sunk_count as (
+	select class, count(ship) as sunk
+	from sunk_ships
+	group by class)
+
+select c.class,
+case
+	when sc.sunk is not null
+	then sc.sunk
+	else 0
+	end as sunk
+from classes as c
+left join sunk_count as sc
+on c.class = sc.class
+
+57
+with sunk_ships as (
+	select o.ship as ship,
+	case
+		when s.name is not null
+		then s.class
+		else o.ship
+		end as class
+	from outcomes as o
+	left join ships as s
+	on o.ship = s.name
+	where o.result = 'sunk'
+),
+sunk_count as (
+	select class, count(ship) as sunk
+	from sunk_ships
+	group by class),
+class_losses as (
+	select c.class,
+	case
+		when sc.sunk is not null
+		then sc.sunk
+		else 0
+		end as sunk
+	from classes as c
+	left join sunk_count as sc
+	on c.class = sc.class
+),
+all_ships_classes as (
+	select distinct
+case
+	when s.name is not null
+	then s.name
+	else o.ship
+	end as ship_name,
+case
+	when s.class is not null
+	then s.class
+	else o.ship
+	end as ship_class
+from ships as s
+full join outcomes as o
+on s.name = o.ship
+),
+class_count_ships as (
+	select ship_class, count(ship_name) as ships
+	from all_ships_classes
+	group by ship_class
+)
+
+select cl.class, cl.sunk
+from class_losses as cl
+inner join class_count_ships as ccs
+on cl.class = ccs.ship_class
+where ccs.ships >= 3 and cl.sunk > 0
+
+58(3)
+
+59
+with
+res_inc as(
+	select point, sum(inc) as total_inc
+	from Income_o
+	group by point
+	),
+res_out as (
+	select point, sum(out) as total_out
+	from Outcome_o
+	group by point
+)
+
+select res_inc.point,
+case
+	when res_out.total_out is null
+	then res_inc.total_inc
+	else res_inc.total_inc - res_out.total_out
+	end
+from res_inc    
+left join res_out
+on res_inc.point = res_out.point
+
+60
+with
+inc_for_date as(
+	select point, inc
+	from Income_o
+	where date < '2001-04-15'
+	),
+out_for_date as (
+	select point, out
+	from Outcome_o
+	where date < '2001-04-15'
+),
+res_inc as (
+	select point, sum(inc) as total_inc
+	from inc_for_date
+	group by point
+),
+res_out as (
+	select point, sum(out) as total_out
+	from out_for_date
+	group by point
+)
+
+select res_inc.point,
+case
+	when res_out.total_out is null
+	then res_inc.total_inc
+	else res_inc.total_inc - res_out.total_out
+	end
+from res_inc    
+left join res_out
+on res_inc.point = res_out.point
+
+61
+with
+res_inc as(
+	select point, sum(inc) as total_inc
+	from Income_o
+	group by point
+	),
+res_out as (
+	select point, sum(out) as total_out
+	from Outcome_o
+	group by point
+),
+total_res as (
+	select res_inc.point,
+	case
+		when res_out.total_out is null
+		then res_inc.total_inc
+		else res_inc.total_inc - res_out.total_out
+		end as total_balance
+	from res_inc    
+	left join res_out
+	on res_inc.point = res_out.point
+)
+
+select sum(total_balance)
+from total_res
+
+62
+with
+inc_for_date as(
+	select point, inc
+	from Income_o
+	where date < '2001-04-15'
+	),
+out_for_date as (
+	select point, out
+	from Outcome_o
+	where date < '2001-04-15'
+),
+res_inc as (
+	select point, sum(inc) as total_inc
+	from inc_for_date
+	group by point
+),
+res_out as (
+	select point, sum(out) as total_out
+	from out_for_date
+	group by point
+),
+total_for_date as (
+	select res_inc.point,
+	case
+		when res_out.total_out is null
+		then res_inc.total_inc
+		else res_inc.total_inc - res_out.total_out
+		end as total_balance
+	from res_inc    
+	left join res_out
+	on res_inc.point = res_out.point
+)
+
+select sum(total_balance)
+from total_for_date
+
+63
+with res(id_psg) as (
+select distinct id_psg
+from pass_in_trip
+group by id_psg, place
+having count(place) > 1
+)
+
+select psg.name
+from Passenger as psg
+inner join res
+on psg.id_psg = res.id_psg
+
+64
+with
+res_inc as(
+	select point, date, sum(inc) as total_inc
+	from Income
+	group by point, date
+	),
+res_out as (
+	select point, date, sum(out) as total_out
+	from Outcome
+	group by point, date
+),
+operations as (
+select i.point, i.date, i.total_inc, o.total_out
+from res_inc as i
+inner join res_out as o
+on i.point = o.point and i.date = o.date
+
+union
+
+select i.point, i.date, i.total_inc, null
+from res_inc as i
+left join res_out as o
+on i.point = o.point and i.date = o.date
+where o.point is null
+
+union
+
+select o.point, o.date, null, o.total_out
+from res_inc as i
+right join res_out as o
+on i.point = o.point and i.date = o.date
+where i.point is null
+)
+
+select point, date,
+case
+	when total_inc is null
+	then 'out'
+	when total_inc is not null
+	then 'inc'
+	end as status,
+case
+	when total_inc is null
+	then total_out
+	when total_inc is not null
+	then total_inc
+	end as total_sum
+from operations
+where (total_inc is null and total_out is not null) or (total_inc is not null and total_out is null)
+
+65(3)
+66(3)
+
+67
+with res as (
+select town_from, town_to, count( * ) as routes
+from trip
+group by town_from, town_to
+)
+
+select count(*)
+from res
+where routes = (
+	select max(routes)
+	from res)
+
+68
+with res(town_from_sorted, town_to_sorted, routes) as (
+select
+	case 
+		when town_from < town_to
+		then town_from
+		else town_to
+		end as town_from_sorted,
+	case 
+		when town_from < town_to
+		then town_to
+		else town_from
+		end as town_to_sorted,
+	count(*) as routes
+from trip
+group by 
+	case 
+		when town_from < town_to
+		then town_from
+		else town_to
+		end,
+	case 
+		when town_from < town_to
+		then town_to
+		else town_from
+		end 
+)
+
+select count(*)
+from res
+where routes = (
+	select max(routes)
+	from res)
+
+69(3)
+
+70
+with battles_ships as (
+	select o.battle, o.ship, s.class
+	from outcomes as o
+	left join ships as s
+	on s.name = o.ship),
+
+battles_countries as (
+	select bs.battle, bs.ship, c.country
+	from battles_ships as bs
+	left join classes as c
+	on c.class = bs.class or c.class = bs.ship
+	)
+
+select distinct battle
+from battles_countries
+where country is not null
+group by battle, country
+having count(distinct ship) >= 3

@@ -1,0 +1,149 @@
+1
+SELECT model, speed, hd
+FROM PC
+WHERE price < 500
+
+2
+select maker
+from Product
+where type = 'Printer'
+group by maker
+
+--
+select distinct maker
+from Product
+where type = 'Printer'
+
+3
+select model, ram, screen
+from Laptop
+where price > 1000
+
+4
+select *
+from Printer
+where color = 'y'
+
+5
+select model, speed, hd
+from PC
+where price < 600 and cd in ('12x', '24x')
+
+6
+select DISTINCT prod.maker, lp.speed
+from Product as prod
+join Laptop as lp
+on prod.model = lp.model
+where lp.hd >= 10
+
+7
+select prod.model, pc.price
+from Product as prod
+join PC as pc on pc.model = prod.model
+where prod.maker = 'B'
+union
+select prod.model, lp.price
+from Product as prod
+join Laptop as lp on lp.model = prod.model
+where prod.maker = 'B'
+union
+select prod.model, prin.price
+from Product as prod
+join Printer as prin on prin.model = prod.model
+where prod.maker = 'B'
+
+8
+select maker
+from Product
+where type = 'PC'
+except
+select maker
+from Product
+where type = 'Laptop'
+
+9
+select DISTINCT prod.maker
+from Product as prod
+join PC as pc
+on prod.model = pc.model
+where pc.speed >= 450
+
+10
+select model, price
+from Printer
+where price = (
+select max(price)
+from Printer
+)
+
+11
+select avg(speed)
+from PC
+
+12
+select avg(speed)
+from Laptop
+where price > 1000
+
+13
+select avg(pc.speed)
+from Product as prod
+join PC as pc
+on prod.model = pc.model
+where prod.maker = 'A'
+
+14
+select s.class, s.name, c.country
+from Ships as s
+join Classes as c
+on c.class = s.class
+where c.numGuns >= 10
+
+15
+select hd
+from PC
+group by hd
+having count( * ) > 1
+
+16
+select distinct p1.model, p2.model, p1.speed, p1.ram
+from PC as p1
+join PC as p2
+on p1.speed = p2.speed and p1.ram = p2.ram
+where p1.model > p2.model
+order by speed, ram
+
+17
+select distinct prod.type, lp.model, lp.speed
+from Laptop as lp, Product as prod
+where lp.speed < all (
+select speed
+from PC
+)
+and prod.type = 'Laptop'
+
+18
+select distinct prod.maker, prin.price
+from Product as prod
+inner join Printer as prin
+on prod.model = prin.model
+where prin.price = (
+select min(price)
+from Printer
+where color = 'y'
+)
+and prin.color = 'y'
+
+19
+select prod.maker, avg(lp.screen)
+from Product as prod
+inner join Laptop as lp
+on prod.model = lp.model
+group by prod.maker
+
+20
+select maker, count(model)
+from Product
+where type = 'PC'
+group by maker
+having count(distinct model) > 2
